@@ -10,7 +10,7 @@ A web page where someone types a goal, presses **Run pipeline**, and watches a t
 - Several **agents** each take one task and work on it at the same time.
 - A **synthesizer** merges everything into one final result.
 
-The page shows every step as it happens: which agent is working, what it is writing, how long it took, and what it cost. Nothing is static or faked. Every run calls Claude for real.
+The page shows every step as it happens: which agent is working, what it is writing, how long it took, and what it cost. Nothing is static or faked. Every run calls the chosen AI vendor for real.
 
 ## 2. What the audience sees
 
@@ -102,9 +102,9 @@ Where the key is kept:
 
 1. The user submits a goal. The server creates a **run** row in the database with status `planning`.
 2. The server opens a stream to the browser. From now on every change is sent as an event and also saved in the database.
-3. **Orchestrator.** Claude is asked to split the goal into 2 to 5 independent tasks. It replies in a fixed JSON shape: a list of tasks, each with a role name, a one-line title, and detailed instructions. Each task becomes an **agent_task** row.
-4. **Agents.** All tasks start at the same time. Each one is a separate streaming call to Claude with the role as its system prompt and the instructions as the user message. As text arrives it is sent to the browser in small chunks. When an agent finishes its output and token counts are saved.
-5. **Synthesizer.** Once every agent is done, Claude receives all outputs and the original goal and writes the final answer. This also streams.
+3. **Orchestrator.** The model is asked to split the goal into 2 to 5 independent tasks. It replies in a fixed JSON shape: a list of tasks, each with a role name, a one-line title, and detailed instructions. Each task becomes an **agent_task** row.
+4. **Agents.** All tasks start at the same time. Each one is a separate streaming call to the model with the role as its system prompt and the instructions as the user message. As text arrives it is sent to the browser in small chunks. When an agent finishes its output and token counts are saved.
+5. **Synthesizer.** Once every agent is done, the model receives all outputs and the original goal and writes the final answer. This also streams.
 6. The run is marked `completed` with the result, total tokens, and timing. The stream closes.
 7. If anything fails, the failing task or the run is marked `failed` with the error, and the page shows it. Other agents keep running.
 
@@ -192,7 +192,7 @@ The vendor and key come from the Settings dialog (section 2b). The model is alwa
 
 **Orchestrator.** One call with structured output so the reply is guaranteed to be valid JSON matching our task schema. Asked for 2 to 5 tasks that do not depend on each other, each with a distinct role.
 
-**Agent.** One streaming call per task. System prompt: "You are the {role}. Complete only your assigned task. Be concise and concrete." Max output about 1,500 tokens so agents stay fast.
+**Agent.** One streaming call per task. System prompt: "You are the {role}. Complete only your assigned task. Be concise and concrete." Asked to stay under 350 words, with a hard cap of 1,800 tokens, so agents stay fast and never stop mid-sentence.
 
 **Synthesizer.** One streaming call. Receives the goal and every agent output, labelled by role, and is asked to write one polished answer in markdown.
 

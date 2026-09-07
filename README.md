@@ -52,7 +52,7 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
    npm install
    ```
 
-2. Create `.env.local` in the project root and fill in your values. See `.env.example` for the list.
+2. Create `.env.local` (or `.env`) in the project root and fill in your values. See `.env.example` for the list.
 
    ```bash
    DATABASE_URL=postgres://user:password@host:5432/dbname
@@ -61,6 +61,8 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
    GOOGLE_GENERATIVE_AI_API_KEY=
    ANTHROPIC_API_KEY=
    ```
+
+   If you use Supabase, copy the **Session pooler** connection string from the dashboard (Connect, then Session pooler), not the direct one. The direct host is IPv6-only and does not resolve on most home and office networks.
 
 3. Create the database tables.
 
@@ -96,6 +98,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run db:generate` | Generate SQL migrations from the schema |
 | `npm run db:migrate` | Run generated migrations |
 | `npm run db:studio` | Open Drizzle Studio to browse the database |
+| `npm run pipeline -- <vendor> "<goal>"` | Run one pipeline from the terminal and print every event |
 
 ## Project layout
 
@@ -120,4 +123,4 @@ Every stage runs on the cheapest model of the chosen vendor: OpenAI `gpt-5-nano`
 
 ## Status
 
-Proof of concept. The project scaffold, database client, and UI foundation are in place. The pipeline logic, database schema, and live canvas are the next steps.
+Proof of concept, feature complete as described in `docs/SPEC.md`. Verified with a live Anthropic run from the terminal; the browser flow needs a reachable Postgres.
