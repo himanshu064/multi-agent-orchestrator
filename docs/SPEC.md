@@ -16,7 +16,9 @@ The page shows every step as it happens: which agent is working, what it is writ
 
 The page has four areas.
 
-**Top bar.** The goal input, a **Run pipeline** button, three example goals you can click to fill the box, and a **History** button.
+**Top bar.** The goal input, a **Run pipeline** button, and a **History** button.
+
+**Predefined goals.** Under the input, a row of ready-made goal cards. Clicking one fills the input so a demo starts in one click. Each card has a short label and the full goal text. See section 2a for the list.
 
 **Pipeline diagram.** The same picture as our reference image, drawn live.
 
@@ -53,6 +55,21 @@ Agent boxes show the role the orchestrator gave them, for example "Market Resear
 - **Result**: the final answer rendered as formatted text, with a summary underneath: total time, tokens in and out, and estimated cost in dollars.
 
 **History drawer.** A list of past runs. Clicking one loads it into the page exactly as it finished, so a good run can be replayed on stage without waiting.
+
+## 2a. Predefined goals
+
+These are chosen because each one naturally splits into separate jobs, so the audience sees several agents working at once.
+
+| Label | Goal text the card fills in |
+|---|---|
+| Market report | Write a short market report on electric scooters in India: market size, top players, customer segments, and risks. |
+| Product launch plan | Plan the launch of a mobile banking app for students: target audience, key features, marketing channels, and a 90-day timeline. |
+| Competitor analysis | Compare three leading project management tools for a 50-person software company: pricing, strengths, weaknesses, and a recommendation. |
+| Blog post | Write a 600-word blog post on how small businesses can use AI in 2026, with real examples and a practical checklist. |
+| Travel itinerary | Create a 3-day trip plan for Jaipur for a family of four: sights, food, budget, and travel tips. |
+| Code review brief | Review a proposal to move a monolith Node.js app to microservices: benefits, risks, migration steps, and team impact. |
+
+The list lives in one file, `src/lib/goals.ts`, so it is easy to change before a client meeting. The input stays editable, so any custom goal also works.
 
 ## 3. How one run works, step by step
 
@@ -161,7 +178,7 @@ src/app/api/runs/[id]/route.ts           GET one run for replay
 
 src/components/pipeline/
   Demo.tsx                               Holds run state, wires everything together
-  GoalForm.tsx                           Input, example chips, Run button
+  GoalForm.tsx                           Input, predefined goal cards, Run button
   StatusStrip.tsx                        Current step and timer
   PipelineCanvas.tsx                     React Flow diagram with live nodes
   nodes/OrchestratorNode.tsx
@@ -181,6 +198,8 @@ src/lib/agents/
   events.ts                              Event types shared by server and browser
   pricing.ts                             Cost table
 
+src/lib/goals.ts                         Predefined goals shown in the UI
+
 src/lib/db/
   schema.ts                              The three tables
   index.ts                               Drizzle client
@@ -190,7 +209,7 @@ src/lib/db/
 
 - **Agent count is dynamic**, 2 to 5, chosen by the orchestrator. The diagram lays itself out to fit. This is more impressive than a fixed three and costs nothing extra.
 - **Agent text streams live** into the boxes. This is the moment the audience watches, so it is worth the extra code.
-- **Any goal is allowed.** Three example goals are offered as chips so a demo can start in one click.
+- **Any goal is allowed.** Six predefined goals are offered as cards so a demo can start in one click.
 - **Haiku 4.5 everywhere** for cost. The model is one env variable if we ever want a stronger orchestrator.
 - **No Docker.** Postgres and env values are provided by the developer.
 - **No login.** This is a local or single-tenant demo.
@@ -210,7 +229,7 @@ src/lib/db/
 4. `useRun` hook and the status strip, so the page reflects a live run in plain text.
 5. React Flow canvas with the three node types and animated edges.
 6. Activity log, result panel with cost, and history drawer.
-7. Polish: example chips, empty states, error states, final visual pass.
+7. Polish: predefined goal cards, empty states, error states, final visual pass.
 
 Each step is committed on its own so the project works at every point.
 
