@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ type Check =
   | { state: "idle" }
   | { state: "checking" }
   | { state: "ok" }
+  | { state: "cleared" }
   | { state: "error"; message: string };
 
 export function SettingsDialog({
@@ -95,7 +96,16 @@ function SettingsForm({
     }
   };
 
+  const clearKey = () => {
+    const keys = { ...settings.keys };
+    delete keys[provider];
+    onSave({ provider, keys });
+    setKey("");
+    setCheck({ state: "cleared" });
+  };
+
   const info = PROVIDERS[provider];
+  const hasSavedKey = Boolean(settings.keys[provider]);
 
   return (
     <>
@@ -164,6 +174,11 @@ function SettingsForm({
             <CheckCircle2 className="size-4" /> Key works. Saved.
           </p>
         )}
+        {check.state === "cleared" && (
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CheckCircle2 className="size-4" /> Key removed from this browser.
+          </p>
+        )}
         {check.state === "error" && (
           <p className="flex items-center gap-1.5 text-sm text-destructive">
             <XCircle className="size-4" /> {check.message}
@@ -171,23 +186,30 @@ function SettingsForm({
         )}
       </div>
 
-      <DialogFooter>
-        <Button
-          variant="outline"
-          onClick={() => {
-            onSave({ provider, keys: settings.keys });
-            onClose();
-          }}
-        >
-          Use {info.name} without a key
-        </Button>
-        <Button
-          onClick={verifyAndSave}
-          disabled={!key.trim() || check.state === "checking"}
-        >
-          {check.state === "checking" && <Loader2 className="animate-spin" />}
-          Verify and save
-        </Button>
+      <DialogFooter className="sm:justify-between">
+        <div>
+          {hasSavedKey && (
+            <Button variant="ghost" size="sm" onClick={clearKey} className="text-destructive hover:text-destructive">
+              <Trash2 /> Clear key
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onSave({ provider, keys: settings.keys });
+              onClose();
+            }}
+          >
+            Use without key
+          </Button>
+          <Button size="sm" onClick={verifyAndSave} disabled={!key.trim() || check.state === "checking"}>
+            {check.state === "checking" && <Loader2 className="animate-spin" />}
+            Save key
+          </Button>
+        </div>
       </DialogFooter>
     </>
   );
