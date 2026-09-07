@@ -16,7 +16,7 @@ The page shows every step as it happens: which agent is working, what it is writ
 
 The page has four areas.
 
-**Top bar.** The goal input, a **Run pipeline** button, a **Settings** button, and a **History** button.
+**Top bar.** The goal input, a **Run pipeline** button, an **Add API key** button (it reads **Update API key** once a key is saved), and a **History** button. The goal input is focused as soon as the page loads.
 
 **Provider badge.** Next to the Run button, a small badge always shows which vendor and model the next run will use and its price, for example "OpenAI · gpt-5-nano · $0.05 in / $0.40 out per 1M tokens · cheapest tier". This makes the low-cost point visible to the audience.
 
@@ -73,9 +73,9 @@ These are chosen because each one naturally splits into separate jobs, so the au
 
 The list lives in one file, `src/lib/goals.ts`, so it is easy to change before a client meeting. The input stays editable, so any custom goal also works.
 
-## 2b. Settings: choose a vendor and enter a key from the UI
+## 2b. Add or update an API key from the UI
 
-A **Settings** dialog lets the presenter pick the AI vendor and paste an API key without touching any files.
+The **Add API key** dialog lets the presenter pick the AI vendor and paste an API key without touching any files.
 
 | Vendor | Cheapest model we use | Price per 1M tokens (in / out) |
 |---|---|---|
@@ -188,7 +188,7 @@ All three stages go through the Vercel AI SDK (`ai` package), which gives one se
 
 Why this rather than OpenRouter: OpenRouter would give one key for every model, but it sits between us and the vendor, charges a small fee on top, and the client would need an OpenRouter account instead of the vendor account they already have. Direct adapters let us say honestly "this run called OpenAI" or "this run called Google". OpenRouter can be added later as a fourth option with `@openrouter/ai-sdk-provider` if a client asks for it.
 
-The vendor and key come from the Settings dialog (section 2b). The model is always the cheapest one for that vendor.
+The vendor and key come from the API key dialog (section 2b). The model is always the cheapest one for that vendor.
 
 **Orchestrator.** One call with structured output so the reply is guaranteed to be valid JSON matching our task schema. Asked for 2 to 5 tasks that do not depend on each other, each with a distinct role.
 
@@ -281,4 +281,4 @@ npm run db:push
 npm run dev
 ```
 
-Open http://localhost:3000, open **Settings**, pick a vendor and paste a key, click a predefined goal, press **Run pipeline**.
+Open http://localhost:3000, click **Add API key**, pick a vendor and paste a key, click a predefined goal, press **Run pipeline**.

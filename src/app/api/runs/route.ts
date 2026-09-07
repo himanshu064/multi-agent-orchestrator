@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const apiKey = resolveApiKey(provider, request.headers.get(API_KEY_HEADER));
   if (!apiKey) {
     return Response.json(
-      { error: `No API key for ${PROVIDERS[provider].name}. Add one in Settings.` },
+      { error: `No API key for ${PROVIDERS[provider].name}. Add one with the Add API key button.` },
       { status: 400 },
     );
   }

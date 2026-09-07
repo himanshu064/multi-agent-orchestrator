@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Settings } from "lucide-react";
+import { History, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,7 +53,7 @@ export function Demo({ initialRuns, dbError }: Props) {
         <div className="flex items-center gap-3">
           <ProviderBadge provider={settings.provider} hasKey={Boolean(apiKey)} />
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-            <Settings /> Settings
+            <KeyRound /> {apiKey ? "Update API key" : "Add API key"}
           </Button>
           <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
             <History /> History

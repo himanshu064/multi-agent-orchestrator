@@ -100,7 +100,7 @@ function SettingsForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>AI vendor and API key</DialogTitle>
+        <DialogTitle>Add or update your API key</DialogTitle>
         <DialogDescription>
           Every run uses the cheapest model of the chosen vendor. The key stays
           in this browser and is sent only with your own runs.

@@ -25,7 +25,7 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 - **Live pipeline diagram.** Each node changes state as work happens: waiting, working, done, or failed.
 - **Agent status.** How many agents are running, what task each one has, and its output streaming in as it works.
 - **Activity log.** A timestamped list of everything that happened in the run.
-- **Vendor choice from the UI.** Pick OpenAI, Gemini, or Claude and paste a key in Settings. The page always shows which cheapest-tier model is in use and its price.
+- **Vendor choice from the UI.** Pick OpenAI, Gemini, or Claude and paste a key with the Add API key button. The page always shows which cheapest-tier model is in use and its price.
 - **Final result.** The merged answer, plus total time, tokens used, and estimated cost.
 - **Run history.** Past runs are saved in Postgres and can be reopened at any time.
 
@@ -56,7 +56,7 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 
    ```bash
    DATABASE_URL=postgres://user:password@host:5432/dbname
-   # Optional fallbacks. Keys can also be pasted in the Settings dialog.
+   # Optional fallbacks. Keys can also be pasted with the Add API key button in the UI.
    OPENAI_API_KEY=
    GOOGLE_GENERATIVE_AI_API_KEY=
    ANTHROPIC_API_KEY=
@@ -80,7 +80,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Using the demo
 
-1. Open **Settings**, choose a vendor, paste its API key, and save.
+1. Click **Add API key**, choose a vendor, paste its API key, and save.
 2. Click a predefined goal or type your own, then click **Run pipeline**.
 3. Watch the orchestrator plan, the agents work in parallel, and the result appear.
 4. Open **History** to replay a previous run.

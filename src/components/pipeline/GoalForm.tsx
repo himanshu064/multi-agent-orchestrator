@@ -23,6 +23,7 @@ export function GoalForm({ goal, onGoalChange, onRun, onCancel, running }: Props
           onChange={(e) => onGoalChange(e.target.value)}
           placeholder="Describe the goal for the team, or pick one below"
           rows={2}
+          autoFocus
           disabled={running}
           className="min-h-16 resize-none text-base"
           onKeyDown={(e) => {
