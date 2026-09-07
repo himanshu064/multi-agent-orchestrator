@@ -2,14 +2,17 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local.");
+type Db = ReturnType<typeof create>;
+
+function create() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set. Add it to .env.local.");
+  return drizzle(postgres(url, { prepare: false }), { schema });
 }
 
-// Reuse the connection across hot reloads in development.
-const globalForDb = globalThis as unknown as { pg?: ReturnType<typeof postgres> };
-const client = globalForDb.pg ?? postgres(connectionString, { prepare: false });
-if (process.env.NODE_ENV !== "production") globalForDb.pg = client;
+// Kept on globalThis so dev hot reloads reuse one connection pool.
+const g = globalThis as unknown as { __db?: Db };
 
-export const db = drizzle(client, { schema });
+export function getDb(): Db {
+  return (g.__db ??= create());
+}
