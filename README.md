@@ -29,14 +29,73 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 - **Final result.** A Show result button opens the merged answer full screen, with total time, tokens used, and estimated cost. The view lives at `?result=<run id>`, so the link can be shared.
 - **Run history.** Past runs are saved in Postgres and can be reopened at any time.
 
-## Stack
+## Tech stack
 
-| Layer | Choice |
+Everything runs in one Next.js app. There is no separate backend service.
+
+### Application
+
+| Piece | Version | What it does here | Why we chose it |
+|---|---|---|---|
+| **Next.js** (App Router) | 16 | Serves the page, the API routes, and the live event stream | One codebase for UI and server; route handlers can stream responses |
+| **React** | 19 | Renders the page and reacts to each event as it arrives | Comes with Next.js |
+| **TypeScript** | 5 | Types shared between server and browser, including the event shapes | Catches mistakes before they reach a demo |
+
+### User interface
+
+| Piece | Version | What it does here | Why we chose it |
+|---|---|---|---|
+| **Tailwind CSS** | 4 | All styling, including the shadow and radius tokens | Fast to iterate, no separate stylesheet to maintain |
+| **shadcn/ui** | 4 | Buttons, cards, dialogs, drawer, inputs | Accessible components that live in our repo and can be edited |
+| **React Flow** (`@xyflow/react`) | 12 | Draws the orchestrator, agent, and result nodes and the animated edges | Purpose-built for node diagrams; nodes are plain React components |
+| **lucide-react** | 1 | Icons | Same icon family as shadcn/ui |
+| **react-markdown** + remark-gfm | 10 / 4 | Renders the final answer and agent output as formatted text | Small and safe; no raw HTML from the model |
+| **@tailwindcss/typography** | 0.5 | Readable defaults for that rendered text | One class instead of styling every heading and list |
+
+### AI
+
+| Piece | Version | What it does here | Why we chose it |
+|---|---|---|---|
+| **Vercel AI SDK** (`ai`) | 7 | One set of functions for streaming text and getting structured JSON from any vendor | Same code path for all three vendors; streaming and JSON schemas built in |
+| **@ai-sdk/openai** | 4 | Talks to OpenAI, model `gpt-5-nano` | Cheapest OpenAI model |
+| **@ai-sdk/google** | 4 | Talks to Google Gemini, model `gemini-2.5-flash-lite` | Cheapest Gemini model |
+| **@ai-sdk/anthropic** | 4 | Talks to Anthropic, model `claude-haiku-4-5` | Cheapest Claude model |
+| **zod** | 4 | Defines the task list the orchestrator must return | The AI SDK turns it into a JSON schema the model has to follow |
+
+Each adapter calls the vendor directly. There is no middleman such as OpenRouter, so there is no extra fee and the demo can honestly say which vendor handled a run.
+
+### Data
+
+| Piece | Version | What it does here | Why we chose it |
+|---|---|---|---|
+| **PostgreSQL** | any recent | Stores runs, agent tasks, and the event log | The team's standard database |
+| **Drizzle ORM** + drizzle-kit | 0.45 / 0.31 | Typed queries and the schema-to-database push | Schema is plain TypeScript; migrations are generated from it |
+| **postgres** (postgres-js) | 3 | The database driver | Small and fast; works with serverless and pooled connections |
+
+### How the pieces talk to each other
+
+```
+Browser                          Server (Next.js route handlers)              Vendors
+-------                          --------------------------------             -------
+Goal + vendor + key  --POST-->   /api/runs
+                                   create run row  ------------------>  Postgres
+                                   orchestrator (generateObject) ---->  OpenAI / Gemini / Claude
+                                   agents in parallel (streamText) -->  OpenAI / Gemini / Claude
+                                   synthesizer (streamText) --------->  OpenAI / Gemini / Claude
+Diagram updates   <--SSE stream--  every event, as it happens
+                                   save tasks, events, result  ------>  Postgres
+Show result       --GET-------->   /api/runs/{id}  <-------------------  Postgres
+```
+
+Server-Sent Events (SSE) is a plain HTTP response that stays open and sends one small message per event. The browser reads it with `fetch`, so no extra library is needed on either side.
+
+### Developer tooling
+
+| Piece | What it does here |
 |---|---|
-| Framework | Next.js 16 (App Router, TypeScript) |
-| UI | Tailwind CSS 4, shadcn/ui, React Flow |
-| Database | PostgreSQL with Drizzle ORM |
-| AI | Vercel AI SDK with OpenAI, Gemini, and Anthropic adapters; cheapest model per vendor |
+| **ESLint** with `eslint-config-next` | Lint rules, including the React hooks rules |
+| **tsx** | Runs the terminal pipeline script without a build step |
+| **dotenv** | Lets drizzle-kit read `.env` and `.env.local` |
 
 ## Prerequisites
 
