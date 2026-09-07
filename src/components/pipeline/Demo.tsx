@@ -44,19 +44,19 @@ export function Demo({ initialRuns, dbError }: Props) {
   const agent = selectedAgent != null ? view.agents.find((a) => a.position === selectedAgent) : undefined;
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-4 p-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-5 p-6 pt-7">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Multi-Agent Orchestrator</h1>
-          <p className="text-sm text-muted-foreground">One orchestrator plans, several agents work in parallel, one result.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Multi-Agent Orchestrator</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">One orchestrator plans, several agents work in parallel, one merged result.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ProviderBadge provider={settings.provider} hasKey={Boolean(apiKey)} />
-          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-            <KeyRound /> {apiKey ? "Update API key" : "Add API key"}
+          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)} className="rounded-full ps-2.5 pe-3 shadow-(--shadow-border)">
+            <KeyRound strokeWidth={2} /> {apiKey ? "Update API key" : "Add API key"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-            <History /> History
+          <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)} className="rounded-full ps-2.5 pe-3 shadow-(--shadow-border)">
+            <History strokeWidth={2} /> History
           </Button>
         </div>
       </header>
@@ -68,16 +68,21 @@ export function Demo({ initialRuns, dbError }: Props) {
       )}
 
       <GoalForm goal={goal} onGoalChange={setGoal} onRun={run} onCancel={cancel} running={isActive} />
-      <StatusStrip view={view} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <Card className="h-[560px] overflow-hidden p-0">
-          <PipelineCanvas view={view} onSelectAgent={setSelectedAgent} />
+        <Card className="flex h-[600px] flex-col gap-0 overflow-hidden p-0 shadow-(--shadow-border) ring-0">
+          <StatusStrip view={view} />
+          <div className="min-h-0 flex-1 bg-[radial-gradient(ellipse_at_top,oklch(0.985_0.002_250),oklch(0.97_0.003_250))]">
+            <PipelineCanvas view={view} onSelectAgent={setSelectedAgent} />
+          </div>
         </Card>
-        <Card className="flex h-[560px] flex-col gap-0 overflow-hidden p-0">
+        <Card className="flex h-[600px] flex-col gap-0 overflow-hidden p-0 shadow-(--shadow-border) ring-0">
           <Tabs value={tab} onValueChange={setTab} className="flex h-full flex-col gap-0">
-            <TabsList className="m-3 mb-0 w-fit">
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsList variant="line" className="w-full justify-start rounded-none border-b px-3">
+              <TabsTrigger value="activity">
+                Activity
+                {view.log.length > 0 && <span className="ms-1.5 rounded-full bg-muted px-1.5 font-mono text-[10px] tabular-nums">{view.log.length}</span>}
+              </TabsTrigger>
               <TabsTrigger value="result">Result</TabsTrigger>
             </TabsList>
             <TabsContent value="activity" className="min-h-0 flex-1 overflow-y-auto">

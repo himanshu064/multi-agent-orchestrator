@@ -10,7 +10,7 @@ import type { AgentView, RunView } from "./useRun";
 
 const nodeTypes = { orchestrator: OrchestratorNode, agent: AgentNode, result: ResultNode };
 
-const GAP = 40;
+const GAP = 36;
 const ROW_AGENTS = 190;
 const ROW_RESULT = 380;
 const CIRCLE = 128;
@@ -83,7 +83,7 @@ function buildGraph(view: RunView): { nodes: Node[]; edges: Edge[] } {
       target: id,
       type: "smoothstep",
       animated: agent.status === "running",
-      style: { stroke: "#f59e0b", strokeWidth: 1.5 },
+      style: { stroke: "#f59e0b", strokeWidth: agent.status === "running" ? 2 : 1.5 },
       markerEnd: { type: MarkerType.ArrowClosed, color: "#f59e0b" },
     },
     {
@@ -92,7 +92,7 @@ function buildGraph(view: RunView): { nodes: Node[]; edges: Edge[] } {
       target: "result",
       type: "smoothstep",
       animated: synthesizing,
-      style: { stroke: agent.status === "completed" ? "#0ea5e9" : "#d4d4d8", strokeWidth: 1.5 },
+      style: { stroke: agent.status === "completed" ? "#0ea5e9" : "#d4d4d8", strokeWidth: synthesizing ? 2 : 1.5 },
       markerEnd: { type: MarkerType.ArrowClosed, color: agent.status === "completed" ? "#0ea5e9" : "#d4d4d8" },
     },
   ]);
@@ -131,7 +131,7 @@ function Canvas({ view, onSelectAgent }: Props) {
         if (node.type === "agent" && view.agents.length) onSelectAgent((node as AgentNodeType).data.agent.position);
       }}
     >
-      <Background gap={24} color="#e4e4e7" />
+      <Background gap={20} size={1.2} color="#d4d4d8" />
     </ReactFlow>
   );
 }
