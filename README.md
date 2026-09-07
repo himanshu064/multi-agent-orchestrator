@@ -26,7 +26,7 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 - **Agent status.** How many agents are running, what task each one has, and its output streaming in as it works.
 - **Activity log.** A timestamped list of everything that happened in the run.
 - **Vendor choice from the UI.** Pick OpenAI, Gemini, or Claude and paste a key with the Add API key button. The page always shows which cheapest-tier model is in use and its price.
-- **Final result.** The merged answer, plus total time, tokens used, and estimated cost.
+- **Final result.** A Show result button opens the merged answer full screen, with total time, tokens used, and estimated cost. The view lives at `?result=<run id>`, so the link can be shared.
 - **Run history.** Past runs are saved in Postgres and can be reopened at any time.
 
 ## Stack
@@ -83,7 +83,7 @@ Open [http://localhost:3000](http://localhost:3000).
 1. Click **Add API key**, choose a vendor, paste its API key, and save.
 2. Click a predefined goal or type your own, then click **Run pipeline**.
 3. Watch the orchestrator plan, the agents work in parallel, and the result appear.
-4. Open **History** to replay a previous run.
+4. Press **Show result** next to the Merge stage, or open **History** to bring back a previous run.
 
 ## Scripts
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, Check, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowUpRight, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,7 @@ function message(view: RunView) {
   }
 }
 
-export function StatusStrip({ view }: { view: RunView }) {
+export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResult: () => void }) {
   const active = ACTIVE_STATUSES.has(view.status);
   const failed = view.status === "failed";
   const current = stageIndex(view);
@@ -92,6 +93,11 @@ export function StatusStrip({ view }: { view: RunView }) {
                 {stage.label}
               </span>
               {i < STAGES.length - 1 && <span className={cn("h-px w-4", i < current ? "bg-emerald-300" : "bg-border")} />}
+              {stage.key === "merge" && view.status === "completed" && (
+                <Button size="sm" onClick={onShowResult} className="ms-2 ps-2.5 pe-2 transition-[scale] duration-150 ease-out active:scale-[0.96]">
+                  Show result <ArrowUpRight />
+                </Button>
+              )}
             </li>
           );
         })}

@@ -1,18 +1,18 @@
 "use client";
 
 import { History, KeyRound } from "lucide-react";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { RunSummary } from "@/lib/runs";
 import { ActivityLog } from "./ActivityLog";
 import { GoalForm } from "./GoalForm";
 import { Markdown } from "./Markdown";
 import { PipelineCanvas } from "./PipelineCanvas";
 import { ProviderBadge } from "./ProviderBadge";
-import { ResultPanel } from "./ResultPanel";
+import { ResultModal } from "./ResultModal";
 import { RunHistory } from "./RunHistory";
 import { SettingsDialog } from "./SettingsDialog";
 import { StatusStrip } from "./StatusStrip";
@@ -27,19 +27,25 @@ export function Demo({ initialRuns, dbError }: Props) {
   const [goal, setGoal] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [tab, setTab] = useState("activity");
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null);
 
-  const run = () => {
-    setTab("activity");
-    void start(goal.trim(), settings.provider, apiKey);
-  };
+  // ?result=<runId> opens the full-screen result, so a link can reach it directly.
+  const router = useRouter();
+  const resultId = useSearchParams().get("result");
+  const showResult = (id: string) => router.replace(`?result=${id}`, { scroll: false });
+  const closeResult = () => router.replace("/", { scroll: false });
 
-  const loadRun = (id: string) => {
-    load(id)
-      .then(() => setTab("result"))
-      .catch(() => {});
-  };
+  // The requested run is still loading until the view catches up with it.
+  const loadingResult = Boolean(resultId) && resultId !== view.runId;
+
+  useEffect(() => {
+    if (!resultId || resultId === view.runId) return;
+    load(resultId).catch(() => closeResult());
+    // Only re-run when the requested id changes; `view.runId` catching up must not trigger a reload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultId]);
+
+  const run = () => void start(goal.trim(), settings.provider, apiKey);
 
   const agent = selectedAgent != null ? view.agents.find((a) => a.position === selectedAgent) : undefined;
 
@@ -71,32 +77,25 @@ export function Demo({ initialRuns, dbError }: Props) {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card className="flex h-[600px] flex-col gap-0 overflow-hidden p-0 shadow-(--shadow-border) ring-0">
-          <StatusStrip view={view} />
+          <StatusStrip view={view} onShowResult={() => view.runId && showResult(view.runId)} />
           <div className="min-h-0 flex-1 bg-[radial-gradient(ellipse_at_top,oklch(0.985_0.002_250),oklch(0.97_0.003_250))]">
             <PipelineCanvas view={view} onSelectAgent={setSelectedAgent} />
           </div>
         </Card>
         <Card className="flex h-[600px] flex-col gap-0 overflow-hidden p-0 shadow-(--shadow-border) ring-0">
-          <Tabs value={tab} onValueChange={setTab} className="flex h-full flex-col gap-0">
-            <TabsList variant="line" className="w-full justify-start rounded-none border-b px-3">
-              <TabsTrigger value="activity">
-                Activity
-                {view.log.length > 0 && <span className="ms-1.5 rounded-full bg-muted px-1.5 font-mono text-[10px] tabular-nums">{view.log.length}</span>}
-              </TabsTrigger>
-              <TabsTrigger value="result">Result</TabsTrigger>
-            </TabsList>
-            <TabsContent value="activity" className="min-h-0 flex-1 overflow-y-auto">
-              <ActivityLog entries={view.log} />
-            </TabsContent>
-            <TabsContent value="result" className="min-h-0 flex-1 overflow-y-auto">
-              <ResultPanel view={view} />
-            </TabsContent>
-          </Tabs>
+          <div className="flex items-center gap-2 border-b px-4 py-3 text-sm font-medium">
+            Activity
+            {view.log.length > 0 && <span className="rounded-full bg-muted px-1.5 font-mono text-[10px] tabular-nums">{view.log.length}</span>}
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ActivityLog entries={view.log} />
+          </div>
         </Card>
       </div>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} settings={settings} onSave={save} />
-      <RunHistory open={historyOpen} onOpenChange={setHistoryOpen} initialRuns={initialRuns} onSelect={loadRun} />
+      <RunHistory open={historyOpen} onOpenChange={setHistoryOpen} initialRuns={initialRuns} onSelect={showResult} />
+      <ResultModal open={Boolean(resultId)} onClose={closeResult} view={view} loading={loadingResult} />
 
       <Dialog open={agent != null} onOpenChange={(open) => !open && setSelectedAgent(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">

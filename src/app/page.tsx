@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Demo } from "@/components/pipeline/Demo";
 import { listRecentRuns } from "@/lib/db/queries";
 import type { RunSummary } from "@/lib/runs";
@@ -12,5 +13,9 @@ export default async function Home() {
   } catch (err) {
     dbError = err instanceof Error ? err.message : String(err);
   }
-  return <Demo initialRuns={initialRuns} dbError={dbError} />;
+  return (
+    <Suspense>
+      <Demo initialRuns={initialRuns} dbError={dbError} />
+    </Suspense>
+  );
 }

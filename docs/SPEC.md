@@ -51,12 +51,11 @@ Agent boxes show the role the orchestrator gave them, for example "Market Resear
 - "Merging results"
 - "Done in 14.2s"
 
-**Right panel with two tabs.**
+**Right panel.** A timestamped **Activity** log of every event in the run.
 
-- **Activity**: a timestamped log of every event in the run.
-- **Result**: the final answer rendered as formatted text, with a summary underneath: total time, tokens in and out, and estimated cost in dollars.
+**Result view.** When the Merge stage finishes, a **Show result** button appears next to it. It opens a full-screen view with the final answer as formatted text and a summary line: vendor and model, total time, tokens in and out, and estimated cost. The view is tied to the address bar as `?result=<run id>`, so the link can be copied and opened directly, and a close icon returns to the diagram.
 
-**History drawer.** A list of past runs. Clicking one loads it into the page exactly as it finished, so a good run can be replayed on stage without waiting.
+**History drawer.** A list of past runs. Clicking one loads it into the page exactly as it finished and opens its result view, so a good run can be shown on stage without waiting.
 
 ## 2a. Predefined goals
 
@@ -216,7 +215,7 @@ src/components/pipeline/
   nodes/AgentNode.tsx
   nodes/ResultNode.tsx
   ActivityLog.tsx                        Event list
-  ResultPanel.tsx                        Markdown result and cost summary
+  ResultModal.tsx                        Full-screen result, opened by ?result=<run id>
   RunHistory.tsx                         Drawer listing past runs
   useRun.ts                              Starts a run, reads the stream, updates state
 
