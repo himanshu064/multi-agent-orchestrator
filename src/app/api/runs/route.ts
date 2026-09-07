@@ -1,13 +1,10 @@
-import { desc } from "drizzle-orm";
 import { resolveApiKey } from "@/lib/agents/client";
 import { runPipeline } from "@/lib/agents/pipeline";
 import { encodeEvent, SSE_HEADERS } from "@/lib/agents/sse";
-import { getDb } from "@/lib/db";
-import { runs } from "@/lib/db/schema";
+import { listRecentRuns } from "@/lib/db/queries";
 import { isProviderId, PROVIDERS } from "@/lib/providers";
-import { API_KEY_HEADER, toRunSummary } from "@/lib/runs";
+import { API_KEY_HEADER } from "@/lib/runs";
 
-const HISTORY_LIMIT = 20;
 
 /** Starts a run and streams its events as Server-Sent Events until it ends. */
 export async function POST(request: Request) {
@@ -51,21 +48,5 @@ export async function POST(request: Request) {
 
 /** Recent runs for the history drawer. */
 export async function GET() {
-  const rows = await getDb()
-    .select({
-      id: runs.id,
-      goal: runs.goal,
-      status: runs.status,
-      provider: runs.provider,
-      model: runs.model,
-      inputTokens: runs.inputTokens,
-      outputTokens: runs.outputTokens,
-      createdAt: runs.createdAt,
-      completedAt: runs.completedAt,
-    })
-    .from(runs)
-    .orderBy(desc(runs.createdAt))
-    .limit(HISTORY_LIMIT);
-
-  return Response.json(rows.map(toRunSummary));
+  return Response.json(await listRecentRuns());
 }
