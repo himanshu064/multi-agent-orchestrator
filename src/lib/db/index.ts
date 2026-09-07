@@ -6,7 +6,7 @@ type Db = ReturnType<typeof create>;
 
 function create() {
   const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set. Add it to .env.local.");
+  if (!url) throw new Error("DATABASE_URL is not set. Add it to .env or .env.local.");
   return drizzle(postgres(url, { prepare: false }), { schema });
 }
 

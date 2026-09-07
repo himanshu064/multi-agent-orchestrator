@@ -1,6 +1,6 @@
 # Multi-Agent Orchestrator Demo
 
-A proof of concept that shows how a multi-agent AI pipeline works, built to be demoed live to clients.
+A proof of concept that shows how a multi-agent AI pipeline works, built for the demo purpose to showcase how Multi-Agent Orchestrator works.
 
 One orchestrator agent takes a goal, splits it into smaller tasks, hands each task to a worker agent running in parallel, and a final step merges the workers' output into a single result. The web page shows every stage as it happens.
 

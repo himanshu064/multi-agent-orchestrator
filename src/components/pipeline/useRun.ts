@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { startTransition, useCallback, useRef, useState } from "react";
 import type { RunEvent } from "@/lib/agents/events";
 import type { AgentTask, Run, RunStatus, StoredEvent, TaskStatus } from "@/lib/db/schema";
 import { formatCost, formatDuration } from "@/lib/format";
@@ -57,6 +57,31 @@ export const EMPTY_RUN: RunView = {
 
 export const ACTIVE_STATUSES: ReadonlySet<RunView["status"]> = new Set(["planning", "running", "synthesizing"]);
 
+/** The few primitives the status rail needs, so it can skip re-rendering on text deltas. */
+export type StatusSummary = {
+  status: RunView["status"];
+  agentsTotal: number;
+  agentsDone: number;
+  hasResult: boolean;
+  startedAt: number | null;
+  durationMs: number | null;
+  error: string | null;
+};
+
+export function summarize(view: RunView): StatusSummary {
+  let agentsDone = 0;
+  for (const a of view.agents) if (a.status === "completed" || a.status === "failed") agentsDone++;
+  return {
+    status: view.status,
+    agentsTotal: view.agents.length,
+    agentsDone,
+    hasResult: view.result.length > 0,
+    startedAt: view.startedAt,
+    durationMs: view.durationMs,
+    error: view.error,
+  };
+}
+
 function updateAgent(view: RunView, position: number, patch: Partial<AgentView>): RunView {
   return { ...view, agents: view.agents.map((a) => (a.position === position ? { ...a, ...patch } : a)) };
 }
@@ -82,7 +107,10 @@ export function applyEvent(view: RunView, event: RunEvent): RunView {
     case "plan_started":
       return log(view, at, "Orchestrator is planning the work");
     case "plan_completed": {
-      const agents = event.tasks.map<AgentView>((t) => ({ ...t, status: "pending", output: "", inputTokens: 0, outputTokens: 0, durationMs: null, error: null }));
+      // Agents are indexed by position, so keep them in position order.
+      const agents = event.tasks
+        .toSorted((a, b) => a.position - b.position)
+        .map<AgentView>((t) => ({ ...t, status: "pending", output: "", inputTokens: 0, outputTokens: 0, durationMs: null, error: null }));
       const roles = agents.map((a) => a.role).join(", ");
       return log({ ...view, status: "running", agents }, at, `Orchestrator split the goal into ${agents.length} tasks: ${roles}`);
     }
@@ -160,10 +188,38 @@ export function useRun() {
   const [view, setView] = useState<RunView>(EMPTY_RUN);
   const controller = useRef<AbortController | null>(null);
 
+  // Events arrive faster than the screen refreshes. They are queued and applied once per
+  // frame in a single functional update, so five streaming agents cost one render, not five.
+  const queue = useRef<RunEvent[]>([]);
+  const frame = useRef<number | null>(null);
+
+  const flush = useCallback(() => {
+    frame.current = null;
+    const events = queue.current;
+    if (events.length === 0) return;
+    queue.current = [];
+    startTransition(() => setView((v) => events.reduce(applyEvent, v)));
+  }, []);
+
+  const enqueue = useCallback(
+    (event: RunEvent) => {
+      queue.current.push(event);
+      frame.current ??= requestAnimationFrame(flush);
+    },
+    [flush],
+  );
+
+  const reset = useCallback(() => {
+    controller.current?.abort();
+    if (frame.current != null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    queue.current = [];
+  }, []);
+
   const cancel = useCallback(() => controller.current?.abort(), []);
 
   const start = useCallback(async (goal: string, provider: ProviderId, apiKey: string) => {
-    controller.current?.abort();
+    reset();
     const ac = new AbortController();
     controller.current = ac;
     setView({ ...EMPTY_RUN, goal, provider, model: PROVIDERS[provider].model, status: "planning", startedAt: Date.now() });
@@ -176,19 +232,24 @@ export function useRun() {
         const { error } = (await res.json().catch(() => ({ error: res.statusText }))) as { error?: string };
         throw new Error(error || "The server could not start the run.");
       }
-      for await (const event of readSse(res.body)) setView((v) => applyEvent(v, event));
+      for await (const event of readSse(res.body)) enqueue(event);
+      flush();
     } catch (err) {
+      flush();
       const message = ac.signal.aborted ? "Run cancelled" : err instanceof Error ? err.message : String(err);
       setView((v) => (ACTIVE_STATUSES.has(v.status) ? log({ ...v, status: "failed", error: message }, new Date().toISOString(), message) : v));
     }
-  }, []);
+  }, [reset, enqueue, flush]);
 
-  const load = useCallback(async (runId: string) => {
-    controller.current?.abort();
-    const res = await fetch(`/api/runs/${runId}`);
-    if (!res.ok) throw new Error("Run not found.");
-    setView(viewFromStored((await res.json()) as StoredRun));
-  }, []);
+  const load = useCallback(
+    async (runId: string) => {
+      reset();
+      const res = await fetch(`/api/runs/${runId}`);
+      if (!res.ok) throw new Error("Run not found.");
+      setView(viewFromStored((await res.json()) as StoredRun));
+    },
+    [reset],
+  );
 
   return { view, start, load, cancel, isActive: ACTIVE_STATUSES.has(view.status) };
 }

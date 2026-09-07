@@ -1,10 +1,8 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+"use client";
 
-export function Markdown({ children }: { children: string }) {
-  return (
-    <div className="prose prose-sm max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-li:my-0.5">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
-    </div>
-  );
-}
+import dynamic from "next/dynamic";
+
+/** react-markdown and remark-gfm are only needed once a result or agent output is opened. */
+export const Markdown = dynamic(() => import("./MarkdownContent").then((m) => m.MarkdownContent), {
+  loading: () => <p className="text-sm text-muted-foreground">Rendering...</p>,
+});

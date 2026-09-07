@@ -26,18 +26,23 @@ const timestamps = {
   completedAt: timestamp("completed_at", { withTimezone: true }),
 };
 
-export const runs = pgTable("runs", {
-  id: uuid().primaryKey().defaultRandom(),
-  goal: text().notNull(),
-  status: text().$type<RunStatus>().notNull().default("planning"),
-  provider: text().notNull(),
-  model: text().notNull(),
-  result: text(),
-  inputTokens: integer("input_tokens").notNull().default(0),
-  outputTokens: integer("output_tokens").notNull().default(0),
-  error: text(),
-  ...timestamps,
-});
+export const runs = pgTable(
+  "runs",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    goal: text().notNull(),
+    status: text().$type<RunStatus>().notNull().default("planning"),
+    provider: text().notNull(),
+    model: text().notNull(),
+    result: text(),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    error: text(),
+    ...timestamps,
+  },
+  // The history list is always "newest first".
+  (t) => [index("runs_created_idx").on(t.createdAt)],
+);
 
 export const agentTasks = pgTable(
   "agent_tasks",

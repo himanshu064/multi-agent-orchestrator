@@ -1,11 +1,13 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Check, Loader2, Network } from "lucide-react";
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 export type OrchestratorStatus = "waiting" | "working" | "done";
 export type OrchestratorNodeType = Node<{ status: OrchestratorStatus }, "orchestrator">;
 
-export function OrchestratorNode({ data }: NodeProps<OrchestratorNodeType>) {
+export const OrchestratorNode = memo(
+  function OrchestratorNode({ data }: NodeProps<OrchestratorNodeType>) {
   const { status } = data;
   return (
     <div
@@ -26,4 +28,6 @@ export function OrchestratorNode({ data }: NodeProps<OrchestratorNodeType>) {
       <Handle type="source" position={Position.Bottom} className="opacity-0" />
     </div>
   );
-}
+},
+  (prev, next) => prev.data.status === next.data.status,
+);

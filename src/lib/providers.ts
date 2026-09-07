@@ -43,3 +43,8 @@ export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && value in PROVIDERS;
 }
+
+/** Vendors whose key is set in the server env. Server only; reports presence, never the value. */
+export function providersWithEnvKey(): ProviderId[] {
+  return PROVIDER_IDS.filter((id) => Boolean(process.env[PROVIDERS[id].envKey]));
+}

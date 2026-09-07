@@ -2,10 +2,10 @@
 
 import { AlertCircle, ArrowUpRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ACTIVE_STATUSES, type RunView } from "./useRun";
+import { ACTIVE_STATUSES, type StatusSummary } from "./useRun";
 
 const STAGES = [
   { key: "plan", label: "Plan" },
@@ -16,8 +16,8 @@ const STAGES = [
 type StageState = "pending" | "active" | "done" | "failed";
 
 /** Which of the three stages each status maps to, as an index. */
-function stageIndex(view: RunView) {
-  switch (view.status) {
+function stageIndex({ status, agentsTotal, hasResult }: StatusSummary) {
+  switch (status) {
     case "planning":
       return 0;
     case "running":
@@ -27,36 +27,37 @@ function stageIndex(view: RunView) {
     case "completed":
       return 3;
     case "failed":
-      return view.agents.length === 0 ? 0 : view.result ? 2 : 1;
+      return agentsTotal === 0 ? 0 : hasResult ? 2 : 1;
     default:
       return -1;
   }
 }
 
-function message(view: RunView) {
-  switch (view.status) {
+function message({ status, agentsTotal, agentsDone, durationMs, error }: StatusSummary) {
+  switch (status) {
     case "idle":
       return "Pick a goal and press Run pipeline";
     case "planning":
       return "Orchestrator is planning the work";
-    case "running": {
-      const total = view.agents.length;
-      const done = view.agents.filter((a) => a.status === "completed" || a.status === "failed").length;
-      return done === 0 ? `${total} of ${total} agents working` : `${done} of ${total} agents done`;
-    }
+    case "running":
+      return agentsDone === 0 ? `${agentsTotal} of ${agentsTotal} agents working` : `${agentsDone} of ${agentsTotal} agents done`;
     case "synthesizing":
       return "Merging results";
     case "completed":
-      return `Done in ${formatDuration(view.durationMs ?? 0)}`;
+      return `Done in ${formatDuration(durationMs ?? 0)}`;
     case "failed":
-      return view.error ?? "Run failed";
+      return error ?? "Run failed";
   }
 }
 
-export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResult: () => void }) {
-  const active = ACTIVE_STATUSES.has(view.status);
-  const failed = view.status === "failed";
-  const current = stageIndex(view);
+type Props = StatusSummary & { onShowResult: () => void };
+
+/** Memoized on primitives, so streaming text deltas never re-render the rail. */
+export const StatusStrip = memo(function StatusStrip({ onShowResult, ...summary }: Props) {
+  const { status, startedAt } = summary;
+  const active = ACTIVE_STATUSES.has(status);
+  const failed = status === "failed";
+  const current = stageIndex(summary);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResul
   }, [active]);
 
   // While running the chip is the live timer; once done the message already says the duration.
-  const elapsed = active && view.startedAt ? now - view.startedAt : null;
+  const elapsed = active && startedAt ? now - startedAt : null;
 
   return (
     <div className="flex items-center justify-between gap-4 border-b px-4 py-3">
@@ -93,7 +94,7 @@ export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResul
                 {stage.label}
               </span>
               {i < STAGES.length - 1 && <span className={cn("h-px w-4", i < current ? "bg-emerald-300" : "bg-border")} />}
-              {stage.key === "merge" && view.status === "completed" && (
+              {stage.key === "merge" && status === "completed" && (
                 <Button size="sm" onClick={onShowResult} className="ms-2 ps-2.5 pe-2 transition-[scale] duration-150 ease-out active:scale-[0.96]">
                   Show result <ArrowUpRight />
                 </Button>
@@ -104,7 +105,7 @@ export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResul
       </ol>
       <div className="flex min-w-0 items-center gap-3 text-sm">
         <span className={cn("truncate font-medium", failed && "text-red-700")} aria-live="polite">
-          {message(view)}
+          {message(summary)}
         </span>
         {elapsed != null && (
           <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs tabular-nums text-muted-foreground">
@@ -114,4 +115,4 @@ export function StatusStrip({ view, onShowResult }: { view: RunView; onShowResul
       </div>
     </div>
   );
-}
+});

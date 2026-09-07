@@ -72,11 +72,11 @@ function buildGraph(view: RunView): { nodes: Node[]; edges: Edge[] } {
     id: `agent-${agent.position}`,
     type: "agent",
     position: { x: i * (AGENT_NODE_WIDTH + GAP), y: ROW_AGENTS },
-    data: { agent },
+    data: agent,
     draggable: false,
   }));
 
-  const edges: Edge[] = agentNodes.flatMap(({ id, data: { agent } }) => [
+  const edges: Edge[] = agentNodes.flatMap(({ id, data: agent }) => [
     {
       id: `o-${id}`,
       source: "orchestrator",
@@ -130,7 +130,7 @@ function Canvas({ view, onSelectAgent }: Props) {
       preventScrolling={false}
       proOptions={{ hideAttribution: true }}
       onNodeClick={(_, node) => {
-        if (node.type === "agent" && view.agents.length) onSelectAgent((node as AgentNodeType).data.agent.position);
+        if (node.type === "agent" && view.agents.length) onSelectAgent((node as AgentNodeType).data.position);
       }}
     >
       <Background gap={20} size={1.2} color="#d4d4d8" />

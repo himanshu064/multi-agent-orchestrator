@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Demo } from "@/components/pipeline/Demo";
 import { listRecentRuns } from "@/lib/db/queries";
+import { providersWithEnvKey } from "@/lib/providers";
 import type { RunSummary } from "@/lib/runs";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export default async function Home() {
   }
   return (
     <Suspense>
-      <Demo initialRuns={initialRuns} dbError={dbError} />
+      <Demo initialRuns={initialRuns} dbError={dbError} envKeys={providersWithEnvKey()} />
     </Suspense>
   );
 }

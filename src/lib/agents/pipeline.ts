@@ -71,6 +71,8 @@ export async function runPipeline(input: PipelineInput, onEvent: (event: RunEven
     onEvent({ ...payload, runId, at: new Date().toISOString() });
     if (TRANSIENT_EVENTS.has(payload.type)) return;
     const { type, ...rest } = payload;
+    // The final text already lives on the run row; storing it twice only bloats the log.
+    if ("result" in rest) delete (rest as { result?: string }).result;
     pending.push(db.insert(events).values({ runId, seq: seq++, type, payload: rest }));
   };
 
@@ -90,6 +92,7 @@ export async function runPipeline(input: PipelineInput, onEvent: (event: RunEven
       .values(plan.tasks.map((t, position) => ({ runId, position, ...t })))
       .returning();
     await db.update(runs).set({ status: "running" }).where(eq(runs.id, runId));
+    tasks.sort((a, b) => a.position - b.position);
     emit({
       type: "plan_completed",
       tasks: tasks.map(({ position, role, title }) => ({ position, role, title })),

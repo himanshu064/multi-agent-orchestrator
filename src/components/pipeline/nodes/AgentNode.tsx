@@ -1,10 +1,12 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { AlertCircle, Bot, Check } from "lucide-react";
+import { memo } from "react";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AgentView } from "../useRun";
 
-export type AgentNodeType = Node<{ agent: AgentView }, "agent">;
+/** The agent view is the node data itself, so an unchanged agent keeps the same reference. */
+export type AgentNodeType = Node<AgentView, "agent">;
 
 export const AGENT_NODE_WIDTH = 232;
 
@@ -22,8 +24,7 @@ const LABEL: Record<AgentView["status"], string> = {
   failed: "Failed",
 };
 
-export function AgentNode({ data }: NodeProps<AgentNodeType>) {
-  const { agent } = data;
+export const AgentNode = memo(function AgentNode({ data: agent }: NodeProps<AgentNodeType>) {
   const { status } = agent;
   return (
     <div
@@ -68,4 +69,4 @@ export function AgentNode({ data }: NodeProps<AgentNodeType>) {
       <Handle type="source" position={Position.Bottom} className="opacity-0" />
     </div>
   );
-}
+});

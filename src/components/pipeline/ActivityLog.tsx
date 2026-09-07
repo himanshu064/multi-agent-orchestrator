@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { EmptyState } from "./EmptyState";
 import type { LogEntry } from "./useRun";
 
@@ -8,7 +8,8 @@ function time(at: string) {
   return new Date(at).toLocaleTimeString("en-GB", { hour12: false });
 }
 
-export function ActivityLog({ entries }: { entries: LogEntry[] }) {
+/** The log array only changes on milestone events, so this skips every text delta. */
+export const ActivityLog = memo(function ActivityLog({ entries }: { entries: LogEntry[] }) {
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,4 +31,4 @@ export function ActivityLog({ entries }: { entries: LogEntry[] }) {
       <div ref={end} />
     </ol>
   );
-}
+});

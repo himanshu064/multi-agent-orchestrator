@@ -1,11 +1,13 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Check, Loader2, Trophy } from "lucide-react";
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 export type ResultStatus = "waiting" | "working" | "done" | "failed";
 export type ResultNodeType = Node<{ status: ResultStatus }, "result">;
 
-export function ResultNode({ data }: NodeProps<ResultNodeType>) {
+export const ResultNode = memo(
+  function ResultNode({ data }: NodeProps<ResultNodeType>) {
   const { status } = data;
   return (
     <div className="relative flex size-32 items-center justify-center">
@@ -30,4 +32,6 @@ export function ResultNode({ data }: NodeProps<ResultNodeType>) {
       )}
     </div>
   );
-}
+},
+  (prev, next) => prev.data.status === next.data.status,
+);

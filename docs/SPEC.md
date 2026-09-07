@@ -95,7 +95,7 @@ Where the key is kept:
 
 - Only in the presenter's browser, in local storage. It is never written to the database or to server logs.
 - On each run the browser sends the key in a request header. The server uses it for that run and forgets it.
-- If no key is entered, the server falls back to the matching key in `.env.local` if one exists. This keeps the demo working for the developer without the dialog.
+- If no key is entered, the server falls back to the matching key in `.env` or `.env.local` if one exists. The dialog shows a **Use without key** button only for vendors that have such a key on the server. This keeps the demo working for the developer without the dialog.
 
 ## 3. How one run works, step by step
 

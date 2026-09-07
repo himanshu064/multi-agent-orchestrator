@@ -20,10 +20,16 @@ export function RunHistory({ open, onOpenChange, initialRuns, onSelect }: Props)
   // Refresh the list each time the drawer opens.
   useEffect(() => {
     if (!open) return;
+    let stale = false;
     fetch("/api/runs")
       .then((r) => (r.ok ? (r.json() as Promise<RunSummary[]>) : Promise.reject(r)))
-      .then(setRuns)
+      .then((rows) => {
+        if (!stale) setRuns(rows);
+      })
       .catch(() => {});
+    return () => {
+      stale = true;
+    };
   }, [open]);
 
   return (

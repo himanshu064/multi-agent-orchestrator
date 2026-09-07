@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Multi-Agent Orchestrator Demo",
-  description: "Orchestrator, parallel agents, and a synthesized result, built with Next.js, Drizzle, and Claude.",
+  description: "Orchestrator, parallel agents, and a synthesized result, built with Next.js, Drizzle, and the cheapest OpenAI, Gemini, or Claude model.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -24,9 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

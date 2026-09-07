@@ -9,7 +9,11 @@ export type Settings = {
 };
 
 const STORAGE_KEY = "multi-agent-demo.settings";
+// Bump when the stored shape changes; older data is discarded instead of misread.
+const STORAGE_VERSION = 1;
 const DEFAULT_SETTINGS: Settings = { provider: "openai", keys: {} };
+
+type Stored = Settings & { v: number };
 
 const listeners = new Set<() => void>();
 
@@ -29,7 +33,8 @@ function readRaw() {
 function parse(raw: string | null): Settings {
   if (!raw) return DEFAULT_SETTINGS;
   try {
-    const value = JSON.parse(raw) as Partial<Settings>;
+    const value = JSON.parse(raw) as Partial<Stored>;
+    if (value.v !== STORAGE_VERSION) return DEFAULT_SETTINGS;
     return {
       provider: isProviderId(value.provider) ? value.provider : DEFAULT_SETTINGS.provider,
       keys: value.keys ?? {},
@@ -46,7 +51,7 @@ export function useSettings() {
 
   const save = useCallback((next: Settings) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: STORAGE_VERSION, ...next } satisfies Stored));
     } catch {
       // Private mode or storage blocked; the choice lasts for this page only.
     }

@@ -24,6 +24,8 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   settings: Settings;
   onSave: (next: Settings) => void;
+  /** Vendors whose key is set on the server, so they can be used without pasting one. */
+  envKeys: ProviderId[];
 };
 
 type Check =
@@ -38,6 +40,7 @@ export function SettingsDialog({
   onOpenChange,
   settings,
   onSave,
+  envKeys,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,6 +49,7 @@ export function SettingsDialog({
         <SettingsForm
           key={String(open)}
           settings={settings}
+          envKeys={envKeys}
           onSave={onSave}
           onClose={() => onOpenChange(false)}
         />
@@ -56,6 +60,7 @@ export function SettingsDialog({
 
 function SettingsForm({
   settings,
+  envKeys,
   onSave,
   onClose,
 }: Omit<Props, "open" | "onOpenChange"> & { onClose: () => void }) {
@@ -106,6 +111,7 @@ function SettingsForm({
 
   const info = PROVIDERS[provider];
   const hasSavedKey = Boolean(settings.keys[provider]);
+  const hasEnvKey = envKeys.includes(provider);
 
   return (
     <>
@@ -165,10 +171,11 @@ function SettingsForm({
             setCheck({ state: "idle" });
           }}
         />
-        <p className="text-xs text-muted-foreground">
-          Leave empty to use the {info.envKey} value from the server&apos;s
-          .env.local, if one is set.
-        </p>
+        {hasEnvKey ? (
+          <p className="text-xs text-muted-foreground">
+            The server has a {info.name} key in its env, so you can also use it without pasting one.
+          </p>
+        ) : null}
         {check.state === "ok" && (
           <p className="flex items-center gap-1.5 text-sm text-emerald-700">
             <CheckCircle2 className="size-4" /> Key works. Saved.
@@ -195,16 +202,18 @@ function SettingsForm({
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              onSave({ provider, keys: settings.keys });
-              onClose();
-            }}
-          >
-            Use without key
-          </Button>
+          {hasEnvKey ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onSave({ provider, keys: settings.keys });
+                onClose();
+              }}
+            >
+              Use without key
+            </Button>
+          ) : null}
           <Button size="sm" onClick={verifyAndSave} disabled={!key.trim() || check.state === "checking"}>
             {check.state === "checking" && <Loader2 className="animate-spin" />}
             Save key
