@@ -1,6 +1,6 @@
 "use client";
 
-import { Background, MarkerType, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type Node } from "@xyflow/react";
+import { Background, MarkerType, ReactFlow, ReactFlowProvider, useNodesInitialized, useReactFlow, type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useEffect, useMemo } from "react";
 import { AGENT_NODE_WIDTH, AgentNode, type AgentNodeType } from "./nodes/AgentNode";
@@ -104,15 +104,17 @@ function Canvas({ view, onSelectAgent }: Props) {
   const { nodes, edges } = useMemo(() => buildGraph(view), [view]);
   const { fitView } = useReactFlow();
   const agentCount = view.agents.length;
+  // False until every node has been measured; fitting before that leaves the viewport broken.
+  const initialized = useNodesInitialized();
 
-  // Refit whenever the number of agents changes so the diagram always fills the card.
   useEffect(() => {
-    const id = requestAnimationFrame(() => fitView({ padding: 0.15, duration: 300 }));
-    return () => cancelAnimationFrame(id);
-  }, [agentCount, fitView]);
+    if (initialized) void fitView({ padding: 0.15, duration: 300 });
+  }, [initialized, agentCount, fitView]);
 
   return (
     <ReactFlow
+      // A new agent set is a new diagram; remounting measures the nodes from scratch.
+      key={agentCount}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}

@@ -64,7 +64,8 @@ export function StatusStrip({ view }: { view: RunView }) {
     return () => clearInterval(id);
   }, [active]);
 
-  const elapsed = active && view.startedAt ? now - view.startedAt : view.durationMs;
+  // While running the chip is the live timer; once done the message already says the duration.
+  const elapsed = active && view.startedAt ? now - view.startedAt : null;
 
   return (
     <div className="flex items-center justify-between gap-4 border-b px-4 py-3">
