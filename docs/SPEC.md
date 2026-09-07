@@ -16,7 +16,9 @@ The page shows every step as it happens: which agent is working, what it is writ
 
 The page has four areas.
 
-**Top bar.** The goal input, a **Run pipeline** button, and a **History** button.
+**Top bar.** The goal input, a **Run pipeline** button, a **Settings** button, and a **History** button.
+
+**Provider badge.** Next to the Run button, a small badge always shows which vendor and model the next run will use and its price, for example "OpenAI · gpt-5-nano · $0.05 in / $0.40 out per 1M tokens · cheapest tier". This makes the low-cost point visible to the audience.
 
 **Predefined goals.** Under the input, a row of ready-made goal cards. Clicking one fills the input so a demo starts in one click. Each card has a short label and the full goal text. See section 2a for the list.
 
@@ -70,6 +72,31 @@ These are chosen because each one naturally splits into separate jobs, so the au
 | Code review brief | Review a proposal to move a monolith Node.js app to microservices: benefits, risks, migration steps, and team impact. |
 
 The list lives in one file, `src/lib/goals.ts`, so it is easy to change before a client meeting. The input stays editable, so any custom goal also works.
+
+## 2b. Settings: choose a vendor and enter a key from the UI
+
+A **Settings** dialog lets the presenter pick the AI vendor and paste an API key without touching any files.
+
+| Vendor | Cheapest model we use | Price per 1M tokens (in / out) |
+|---|---|---|
+| OpenAI | `gpt-5-nano` | $0.05 / $0.40 |
+| Google Gemini | `gemini-2.5-flash-lite` | $0.10 / $0.40 |
+| Anthropic Claude | `claude-haiku-4-5` | $1.00 / $5.00 |
+
+Prices checked on the official pricing pages on 2026-09-07. They live in one file, `src/lib/providers.ts`, so they are easy to update.
+
+How the dialog works:
+
+1. Pick a vendor from three cards. Each card shows the model name, the price, and a "cheapest tier" label.
+2. Paste the API key for that vendor. One key per vendor can be saved.
+3. Press **Save**. The server makes one tiny test call to confirm the key works and shows a green tick or a clear error.
+4. The badge in the top bar updates. The next run uses this vendor.
+
+Where the key is kept:
+
+- Only in the presenter's browser, in local storage. It is never written to the database or to server logs.
+- On each run the browser sends the key in a request header. The server uses it for that run and forgets it.
+- If no key is entered, the server falls back to the matching key in `.env.local` if one exists. This keeps the demo working for the developer without the dialog.
 
 ## 3. How one run works, step by step
 
@@ -157,7 +184,11 @@ Server-Sent Events is a plain HTTP response that stays open and sends one line p
 
 ## 7. AI calls
 
-All three stages use the Anthropic SDK and the model set by `ANTHROPIC_MODEL`, which defaults to `claude-haiku-4-5`, the cheapest current model.
+All three stages go through the Vercel AI SDK (`ai` package), which gives one set of functions for streaming text and structured JSON, with a small adapter per vendor: `@ai-sdk/openai`, `@ai-sdk/google`, and `@ai-sdk/anthropic`. Each adapter talks to the vendor's own API directly. There is no middleman and no extra fee.
+
+Why this rather than OpenRouter: OpenRouter would give one key for every model, but it sits between us and the vendor, charges a small fee on top, and the client would need an OpenRouter account instead of the vendor account they already have. Direct adapters let us say honestly "this run called OpenAI" or "this run called Google". OpenRouter can be added later as a fourth option with `@openrouter/ai-sdk-provider` if a client asks for it.
+
+The vendor and key come from the Settings dialog (section 2b). The model is always the cheapest one for that vendor.
 
 **Orchestrator.** One call with structured output so the reply is guaranteed to be valid JSON matching our task schema. Asked for 2 to 5 tasks that do not depend on each other, each with a distinct role.
 
@@ -167,7 +198,7 @@ All three stages use the Anthropic SDK and the model set by `ANTHROPIC_MODEL`, w
 
 **Prompt caching.** The fixed system prompts are marked cacheable so repeat runs pay less for the same instructions.
 
-**Cost estimate.** A small table of price per million tokens by model. Haiku 4.5 is $1 in and $5 out. Shown on the result panel after every run. A typical three-agent run is well under one cent.
+**Cost estimate.** The price table from section 2b is multiplied by the tokens used. Shown on the result panel after every run, next to the vendor and model name. A typical three-agent run is well under one cent on any of the three vendors.
 
 ## 8. Screens and components
 
@@ -189,8 +220,15 @@ src/components/pipeline/
   RunHistory.tsx                         Drawer listing past runs
   useRun.ts                              Starts a run, reads the stream, updates state
 
+src/components/pipeline/
+  SettingsDialog.tsx                     Vendor cards, key input, test button
+  ProviderBadge.tsx                      Shows vendor, model, and price
+
+src/app/api/settings/verify/route.ts     POST, makes one tiny call to check a key
+
+src/lib/providers.ts                     Vendor list, cheapest model ids, prices
 src/lib/agents/
-  client.ts                              Anthropic client and model from env
+  client.ts                              Builds the AI SDK model for the chosen vendor and key
   orchestrator.ts                        Plan the tasks
   worker.ts                              Run one agent, stream text
   synthesizer.ts                         Merge outputs
@@ -210,7 +248,8 @@ src/lib/db/
 - **Agent count is dynamic**, 2 to 5, chosen by the orchestrator. The diagram lays itself out to fit. This is more impressive than a fixed three and costs nothing extra.
 - **Agent text streams live** into the boxes. This is the moment the audience watches, so it is worth the extra code.
 - **Any goal is allowed.** Six predefined goals are offered as cards so a demo can start in one click.
-- **Haiku 4.5 everywhere** for cost. The model is one env variable if we ever want a stronger orchestrator.
+- **Three vendors, cheapest model each.** OpenAI gpt-5-nano, Gemini 2.5 Flash-Lite, Claude Haiku 4.5. Chosen from the UI, key pasted in the UI, price shown on screen.
+- **Direct vendor APIs through the Vercel AI SDK**, not OpenRouter, so there is no middleman or markup.
 - **No Docker.** Postgres and env values are provided by the developer.
 - **No login.** This is a local or single-tenant demo.
 
@@ -237,9 +276,9 @@ Each step is committed on its own so the project works at every point.
 
 ```bash
 npm install
-# create .env.local with DATABASE_URL, ANTHROPIC_API_KEY, ANTHROPIC_MODEL
+# create .env.local with DATABASE_URL (vendor keys are optional fallbacks)
 npm run db:push
 npm run dev
 ```
 
-Open http://localhost:3000, click an example goal, press **Run pipeline**.
+Open http://localhost:3000, open **Settings**, pick a vendor and paste a key, click a predefined goal, press **Run pipeline**.

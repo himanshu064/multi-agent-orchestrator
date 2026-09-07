@@ -25,6 +25,7 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 - **Live pipeline diagram.** Each node changes state as work happens: waiting, working, done, or failed.
 - **Agent status.** How many agents are running, what task each one has, and its output streaming in as it works.
 - **Activity log.** A timestamped list of everything that happened in the run.
+- **Vendor choice from the UI.** Pick OpenAI, Gemini, or Claude and paste a key in Settings. The page always shows which cheapest-tier model is in use and its price.
 - **Final result.** The merged answer, plus total time, tokens used, and estimated cost.
 - **Run history.** Past runs are saved in Postgres and can be reopened at any time.
 
@@ -35,13 +36,13 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 | Framework | Next.js 16 (App Router, TypeScript) |
 | UI | Tailwind CSS 4, shadcn/ui, React Flow |
 | Database | PostgreSQL with Drizzle ORM |
-| AI | Anthropic SDK, Claude Haiku 4.5 by default (cheapest current model) |
+| AI | Vercel AI SDK with OpenAI, Gemini, and Anthropic adapters; cheapest model per vendor |
 
 ## Prerequisites
 
 - Node.js 20 or newer
 - A PostgreSQL database you can connect to
-- An Anthropic API key
+- An API key for at least one of OpenAI, Google Gemini, or Anthropic
 
 ## Setup
 
@@ -55,8 +56,10 @@ One orchestrator agent takes a goal, splits it into smaller tasks, hands each ta
 
    ```bash
    DATABASE_URL=postgres://user:password@host:5432/dbname
-   ANTHROPIC_API_KEY=sk-ant-...
-   ANTHROPIC_MODEL=claude-haiku-4-5
+   # Optional fallbacks. Keys can also be pasted in the Settings dialog.
+   OPENAI_API_KEY=
+   GOOGLE_GENERATIVE_AI_API_KEY=
+   ANTHROPIC_API_KEY=
    ```
 
 3. Create the database tables.
@@ -75,8 +78,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Using the demo
 
-1. Type a goal in the input box, for example "Write a short market report on electric scooters in India".
-2. Click **Run pipeline**.
+1. Open **Settings**, choose a vendor, paste its API key, and save.
+2. Click a predefined goal or type your own, then click **Run pipeline**.
 3. Watch the orchestrator plan, the agents work in parallel, and the result appear.
 4. Open **History** to replay a previous run.
 
@@ -113,7 +116,7 @@ drizzle.config.ts      Drizzle Kit configuration
 
 ## Cost
 
-Every stage runs on Claude Haiku 4.5 by default. A typical run with three agents uses a few thousand tokens and costs a fraction of a cent. Change `ANTHROPIC_MODEL` to use a different model without touching the code.
+Every stage runs on the cheapest model of the chosen vendor: OpenAI `gpt-5-nano`, Gemini `gemini-2.5-flash-lite`, or Claude `claude-haiku-4-5`. A typical run with three agents uses a few thousand tokens and costs a fraction of a cent. The model list and prices live in `src/lib/providers.ts`.
 
 ## Status
 
