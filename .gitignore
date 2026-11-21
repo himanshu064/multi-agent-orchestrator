@@ -43,4 +43,3 @@ next-env.d.ts
 drizzle/meta
 
 !.env.example
-config.bat
